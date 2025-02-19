@@ -1,0 +1,35 @@
+name: "Terraform Infrastructure: GitHub Actions"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name : " Terraform Infrastructure Management"
+    runs-on : ubuntu-latest
+
+    steps:
+      - name: Checkout the repository to the runner
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform with specified version on the runner
+        uses: hashicorp/setup-terraform@v2
+
+      - name : Terraform init
+        run: terraform init
+
+      - name : Terraform format
+        run : terraform fmt -check  -recursive
+
+      - name : Terraform validate
+        run : terraform validate
+
+
+
+
+
+
+
+
