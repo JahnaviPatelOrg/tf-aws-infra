@@ -76,3 +76,81 @@ resource "aws_route_table_association" "private_subnet_asso" {
   subnet_id      = element(aws_subnet.private.*.id, count.index)
   route_table_id = aws_route_table.private.id
 }
+
+
+# Create a security group for the web server
+resource "aws_security_group" "web_sg" {
+  name        = "${var.vpc_name}-web-sg"
+  description = "Allow HTTP and SSH traffic"
+  vpc_id      = aws_vpc.main.id
+
+  # Ingress rule for HTTPS (port 443)
+  ingress {
+    from_port = var.https_port
+    to_port   = var.https_port
+    protocol  = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  # Ingress rule for HTTP (port 80)
+  ingress {
+    from_port = var.http_port
+    to_port   = var.http_port
+    protocol  = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  # Ingress rule for SSH (port 22)
+  ingress {
+    from_port = var.ssh_port
+    to_port   = var.ssh_port
+    protocol  = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  #   Ingree for application port
+  ingress {
+    from_port = var.app_port
+    to_port   = var.app_port
+    protocol  = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+  tags = {
+    Name = "${var.vpc_name}-web-sg"
+  }
+}
+
+#Terraform resource to spin up an EC2 instance.
+resource "aws_instance" "webapp" {
+  ami             = var.custom_ami_id
+  instance_type   = var.instance_type
+  key_name        = var.key_name
+  security_groups = [aws_security_group.web_sg.id]
+  subnet_id       = aws_subnet.public[0].id
+  root_block_device {
+    volume_type           = var.volume_type
+    volume_size           = var.volume_size
+    delete_on_termination = true
+  }
+
+  tags = {
+    Name = "${var.vpc_name}-webapp"
+  }
+}

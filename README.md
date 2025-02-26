@@ -11,11 +11,26 @@ Clone the Repository:
 git clone https://github.com/JahnaviPatelOrg/tf-aws-infra.git
 cd tf-aws-infra
 ```
+
+Use the correct profile
+
+```bash
+export AWS_PROFILE=your-profile
+```
+
+
 Initialize the Terraform Working Directory:
 
 ```bash
 terraform init
 ```
+
+format the code
+
+```bash
+terraform fmt
+```
+
 Validate the Configuration:
 
 ```bash
@@ -24,12 +39,21 @@ terraform validate
 Plan the Changes:
 
 ```bash
-terraform plan
+terraform plan -var-file=dev.tfvars
+terraform plan -var-file=demo.tfvars
 ```
 Apply the Changes:
 
 ```bash
-terraform apply
+terraform apply -var-file=dev.tfvars
+terraform apply -var-file=demo.tfvars
+```
+
+Destroy the Infrastructure:
+
+```bash
+terraform destroy -var-file=dev.tfvars
+terraform destroy -var-file=demo.tfvars
 ```
 
 You may need to provide AWS credentials and other necessary variables to Terraform, either through environment variables or a terraform.tfvars file.
