@@ -36,8 +36,8 @@ variable "availability_zones" {
 
 variable "https_port" {
   description = "The HTTPS port to allow"
-    type        = number
-    default     = 443
+  type        = number
+  default     = 443
 }
 
 variable "ssh_port" {
