@@ -139,11 +139,12 @@ resource "aws_security_group" "web_sg" {
 
 #Terraform resource to spin up an EC2 instance.
 resource "aws_instance" "webapp" {
-  ami             = var.custom_ami_id
-  instance_type   = var.instance_type
-  key_name        = var.key_name
-  security_groups = [aws_security_group.web_sg.id]
-  subnet_id       = aws_subnet.public[0].id
+  ami                         = var.custom_ami_id
+  instance_type               = var.instance_type
+  key_name                    = var.key_name
+  security_groups             = [aws_security_group.web_sg.id]
+  subnet_id                   = aws_subnet.public[0].id
+  associate_public_ip_address = true
   root_block_device {
     volume_type           = var.volume_type
     volume_size           = var.volume_size
