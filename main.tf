@@ -80,7 +80,7 @@ resource "aws_route_table_association" "private_subnet_asso" {
 
 # Create a security group for the web server
 resource "aws_security_group" "web_sg" {
-  name        = "${var.vpc_name}-web-sg"
+  name        = "application security group"
   description = "Allow HTTP and SSH traffic"
   vpc_id      = aws_vpc.main.id
 
