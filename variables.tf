@@ -85,3 +85,30 @@ variable "volume_size" {
   description = "The size of the volume in GB."
   default     = 8
 }
+
+variable "db_password" {
+  description = "The password for the database."
+  type        = string
+  sensitive   = true
+}
+
+variable "db_user" {
+  description = "The username for the database."
+  type        = string
+}
+
+variable "db_name" {
+  description = "The name of the database."
+  type        = string
+}
+
+variable "identifier" {
+  description = "The identifier for the database."
+  type        = string
+}
+
+variable "secret_key" {
+  description = "The secret key for the application."
+  type        = string
+  sensitive   = true
+}

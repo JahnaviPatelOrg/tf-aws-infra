@@ -137,6 +137,38 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
+
+
+# iam instance profile
+resource "aws_iam_role" "ec2_role" {
+  name = "${var.vpc_name}-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        },
+      }
+    ]
+  })
+}
+
+# attach policy to the role
+resource "aws_iam_role_policy_attachment" "ec2_policy_attach" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+
+}
+
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "${var.vpc_name}-ec2-instance-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
 #Terraform resource to spin up an EC2 instance.
 resource "aws_instance" "webapp" {
   ami                         = var.custom_ami_id
@@ -145,6 +177,26 @@ resource "aws_instance" "webapp" {
   security_groups             = [aws_security_group.web_sg.id]
   subnet_id                   = aws_subnet.public[0].id
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
+
+  user_data = <<-EOF
+            #!/bin/bash
+            sudo bash -c 'echo "DB_HOST=${aws_db_instance.db_instance.address}" >> /etc/.env'
+            sudo bash -c 'echo "DB_USER=${var.db_user}" >> /etc/.env'
+            sudo bash -c 'echo "DB_PASS=${var.db_password}" >> /etc/.env'
+            sudo bash -c 'echo "DB_NAME=${var.db_name}" >> /etc/.env'
+            sudo bash -c 'echo "SECRET_KEY=${var.secret_key}" >> /etc/.env'
+            sudo bash -c 'echo "S3_BUCKET_NAME=${aws_s3_bucket.private_bucket.bucket}" >> /etc/.env'
+            sudo bash -c 'echo "VM_IP=\'*\'" >> /etc/.env'
+
+            # Enable the web application service
+            sudo systemctl daemon-reload
+            sudo systemctl enable webapp
+            sudo systemctl start webapp.service
+            sleep 30
+            sudo systemctl restart webapp.service
+            EOF
+
   root_block_device {
     volume_type           = var.volume_type
     volume_size           = var.volume_size
@@ -155,3 +207,148 @@ resource "aws_instance" "webapp" {
     Name = "${var.vpc_name}-webapp"
   }
 }
+
+# S3 Bucket
+
+# private S3 bucket with a bucket name being a UUID.
+# terraform can delete the bucket even if it is not empty
+resource "aws_s3_bucket" "private_bucket" {
+  bucket        = "${var.vpc_name}-private-bucket-${uuid()}"
+  force_destroy = true
+
+  tags = {
+    Name = "${var.vpc_name}-private-bucket"
+  }
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "s3_encryption" {
+  bucket = aws_s3_bucket.private_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# set up a lifecycle policy for the bucket's data. This policy transitions the data to the STANDARD_IA storage class after 30 days
+resource "aws_s3_bucket_lifecycle_configuration" "lifecycle_policy" {
+  bucket = aws_s3_bucket.private_bucket.id
+
+  rule {
+    id     = "transition-to-ia"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}
+
+# DB Security Group
+
+# Create a security group for the database
+resource "aws_security_group" "db_sg" {
+  name        = "database-security-group"
+  description = "Allow MySQL access"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.web_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "db-security-group"
+
+  }
+}
+
+# aws_db_subnet_group for all private subnets
+resource "aws_db_subnet_group" "main" {
+  name       = "rds-private-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
+
+  tags = {
+    Name        = "rds-private-subnet-group"
+    Environment = var.aws_profile
+  }
+}
+
+# parameter group for MySQL
+resource "aws_db_parameter_group" "rds_param_group" {
+  name        = "rds-parameter-group"
+  family      = "mysql8.0"
+  description = "Parameter group for MySQL"
+}
+
+# RDS Instance
+resource "aws_db_instance" "db_instance" {
+  identifier             = var.identifier
+  instance_class         = "db.t3.micro"
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  multi_az               = false
+  username               = var.db_user
+  password               = var.db_password
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  publicly_accessible    = false
+  db_name                = var.db_name
+  allocated_storage      = 10
+  skip_final_snapshot    = true
+  parameter_group_name   = aws_db_parameter_group.rds_param_group.name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+}
+
+# IAM Policy for S3 Access
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "S3AccessPolicy"
+  description = "Policy to allow EC2 to access S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "${aws_s3_bucket.private_bucket.arn}",
+          "${aws_s3_bucket.private_bucket.arn}/*"
+        ]
+      },
+      {
+        Action = [
+          "rds:*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# attach the policy to the role
+resource "aws_iam_role_policy_attachment" "s3_access_attach" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+}
+
