@@ -181,6 +181,7 @@ resource "aws_instance" "webapp" {
 
   user_data = <<-EOF
             #!/bin/bash
+            # Database and app environment variables
             sudo bash -c 'echo "DB_HOST=${aws_db_instance.db_instance.address}" >> /etc/.env'
             sudo bash -c 'echo "DB_USER=${var.db_user}" >> /etc/.env'
             sudo bash -c 'echo "DB_PASS=${var.db_password}" >> /etc/.env'
@@ -188,6 +189,11 @@ resource "aws_instance" "webapp" {
             sudo bash -c 'echo "SECRET_KEY=${var.secret_key}" >> /etc/.env'
             sudo bash -c 'echo "S3_BUCKET_NAME=${aws_s3_bucket.private_bucket.bucket}" >> /etc/.env'
             sudo bash -c 'echo "VM_IP=\'*\'" >> /etc/.env'
+
+            # Configure and start CloudWatch agent
+            sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+            sudo systemctl enable amazon-cloudwatch-agent
+            sudo systemctl restart amazon-cloudwatch-agent
 
             # Enable the web application service
             sudo systemctl daemon-reload
@@ -350,5 +356,44 @@ resource "aws_iam_policy" "s3_access_policy" {
 resource "aws_iam_role_policy_attachment" "s3_access_attach" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
+}
+
+resource "aws_iam_policy" "cloudwatch_policy" {
+  name        = "CloudWatchAgentServerPolicy-${var.vpc_name}"
+  description = "Permissions for CloudWatch Agent"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "cloudwatch:PutMetricData",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeTags",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:DescribeLogGroups",
+          "logs:CreateLogStream",
+          "logs:CreateLogGroup"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameter",
+          "ssm:PutParameter"
+        ],
+        Resource = "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+      }
+    ]
+  })
+}
+
+# Attach CloudWatch policy to the EC2 role
+resource "aws_iam_role_policy_attachment" "cloudwatch_policy_attach" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.cloudwatch_policy.arn
 }
 
