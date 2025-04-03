@@ -112,3 +112,92 @@ variable "secret_key" {
   type        = string
   sensitive   = true
 }
+
+# route53_zone_id
+variable "route53_zone_id" {
+  description = "The Route 53 zone ID."
+  type        = string
+}
+
+# # min_size
+# variable "min_size" {
+#   description = "The minimum size of the Auto Scaling group."
+#   type        = number
+#   default     = 3
+# }
+#
+# # max_size
+# variable "max_size" {
+#   description = "The maximum size of the Auto Scaling group."
+#   type        = number
+#   default     = 5
+# }
+#
+# # desired_capacity
+# variable "desired_capacity" {
+#   description = "The desired capacity of the Auto Scaling group."
+#   type        = number
+#   default     = 3
+# }
+#
+# # health_check_grace_period
+# variable "health_check_grace_period" {
+#   description = "The amount of time, in seconds, that Auto Scaling waits before checking the health status of an instance."
+#   type        = number
+#   default     = 300
+# }
+#
+# # health_check_interval
+# variable "health_check_interval" {
+#   description = "The interval between health checks."
+#   type        = number
+#   default     = 60
+# }
+#
+# # health_check_timeout
+# variable "health_check_timeout" {
+#   description = "The timeout for health checks."
+#   type        = number
+#   default     = 5
+# }
+#
+# # healthy_threshold
+# variable "healthy_threshold" {
+#   description = "The number of consecutive successful health checks required before considering the target healthy."
+#   type        = number
+#   default     = 5
+# }
+#
+# # unhealthy_threshold
+# variable "unhealthy_threshold" {
+#   description = "The number of consecutive failed health checks required before considering the target unhealthy."
+#   type        = number
+#   default     = 2
+# }
+#
+# variable "evaluation_periods" {
+#   description = "The number of periods over which data is compared to the specified threshold."
+#   type        = number
+#   default     = 1
+# }
+#
+# variable "cooldown_period" {
+#   description = "The length of time associated with a specific CloudWatch statistic."
+#   type        = number
+#   default     = 60
+# }
+#
+# # threshold_scale_up
+# variable "threshold_scale_up" {
+#   description = "The threshold for scaling up."
+#   type        = number
+#   default     = 5
+# }
+#
+# # threshold_scale_down
+# variable "threshold_scale_down" {
+#   description = "The threshold for scaling down."
+#   type        = number
+#   default     = 3
+# }
+
