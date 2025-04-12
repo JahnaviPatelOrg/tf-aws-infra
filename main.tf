@@ -172,7 +172,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "s3_encryption" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      sse_algorithm     = "aws:kms"
       kms_master_key_id = aws_kms_key.s3_kms.key_id
     }
   }
@@ -653,8 +653,8 @@ resource "aws_lb_listener" "app_listener" {
 
 # RDS password in Terraform
 resource "random_password" "db_password" {
-  length  = 16
-  special = true
+  length           = 16
+  special          = true
   override_special = "_%!"
 }
 
@@ -728,7 +728,7 @@ resource "aws_kms_key" "secrets_kms" {
 }
 
 resource "aws_kms_key" "rds_kms" {
-  description = "My KMS Key for RDS Encryption"
+  description             = "My KMS Key for RDS Encryption"
   enable_key_rotation     = true
   deletion_window_in_days = 10
   rotation_period_in_days = 90
@@ -775,7 +775,7 @@ resource "aws_kms_key" "rds_kms" {
   })
 
   tags = {
-    Name = "${var.vpc_name}-rds-kms"
+    Name        = "${var.vpc_name}-rds-kms"
     Environment = var.aws_profile
   }
 }
@@ -791,72 +791,72 @@ resource "aws_kms_key" "ec2_kms" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid: "AllowRootAccountAccess",
-        Effect: "Allow",
-        Principal: {
-          AWS: "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        Sid : "AllowRootAccountAccess",
+        Effect : "Allow",
+        Principal : {
+          AWS : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        Action: "kms:*",
-        Resource: "*"
+        Action : "kms:*",
+        Resource : "*"
       },
       {
-        Sid: "AllowEC2Access",
-        Effect: "Allow",
-        Principal: {
-          Service: "ec2.amazonaws.com"
+        Sid : "AllowEC2Access",
+        Effect : "Allow",
+        Principal : {
+          Service : "ec2.amazonaws.com"
         },
-        Action: [
+        Action : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        Resource: "*"
+        Resource : "*"
       },
       {
-        Sid: "AllowEC2AppAccess",
-        Effect: "Allow",
-        Principal: {
-          AWS: "arn:aws:iam::${var.account_id}:role/${aws_iam_role.ec2_role.name}"
+        Sid : "AllowEC2AppAccess",
+        Effect : "Allow",
+        Principal : {
+          AWS : "arn:aws:iam::${var.account_id}:role/${aws_iam_role.ec2_role.name}"
         },
-        Action: [
+        Action : [
           "kms:Decrypt",
           "kms:DescribeKey"
         ],
-        Resource: "*"
+        Resource : "*"
       },
       {
-        Sid: "AllowAutoScalingServiceAccess",
-        Effect: "Allow",
-        Principal: {
-          Service: "autoscaling.amazonaws.com"
+        Sid : "AllowAutoScalingServiceAccess",
+        Effect : "Allow",
+        Principal : {
+          Service : "autoscaling.amazonaws.com"
         },
-        Action: [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:DescribeKey"
-        ],
-        Resource: "*"
-      },
-      {
-        Sid: "AllowAutoScalingRoleAccess",
-        Effect: "Allow",
-        Principal: {
-          AWS: "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
-        },
-        Action: [
+        Action : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:ReEncrypt*",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        Resource: "*"
+        Resource : "*"
       },
       {
-        Sid = "Allow attachment of persistent resources",
+        Sid : "AllowAutoScalingRoleAccess",
+        Effect : "Allow",
+        Principal : {
+          AWS : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        },
+        Action : [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        Resource : "*"
+      },
+      {
+        Sid    = "Allow attachment of persistent resources",
         Effect = "Allow",
         Principal = {
           AWS = [
@@ -869,7 +869,7 @@ resource "aws_kms_key" "ec2_kms" {
         Resource = "*",
         Condition = {
           Bool = {
-            "kms:GrantIsForAWSResource": true
+            "kms:GrantIsForAWSResource" : true
           }
         }
       }
@@ -882,7 +882,7 @@ resource "aws_kms_key" "ec2_kms" {
   }
 }
 
-resource "aws_kms_key" "s3_kms"{
+resource "aws_kms_key" "s3_kms" {
   description             = "KMS key for S3 bucket encryption"
   enable_key_rotation     = true
   deletion_window_in_days = 10
@@ -910,32 +910,32 @@ resource "aws_kms_key" "s3_kms"{
         Resource = "*"
       },
       {
-        Sid: "AllowEC2Access",
-        Effect: "Allow",
-        Principal: {
-          Service: "ec2.amazonaws.com"
+        Sid : "AllowEC2Access",
+        Effect : "Allow",
+        Principal : {
+          Service : "ec2.amazonaws.com"
         },
-        Action: [
+        Action : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        Resource: "*"
+        Resource : "*"
       },
       {
-        Sid: "AllowEC2AppAccess",
-        Effect: "Allow",
-        Principal: {
-          AWS: "arn:aws:iam::${var.account_id}:role/${aws_iam_role.ec2_role.name}"
+        Sid : "AllowEC2AppAccess",
+        Effect : "Allow",
+        Principal : {
+          AWS : "arn:aws:iam::${var.account_id}:role/${aws_iam_role.ec2_role.name}"
         },
-        Action: [
+        Action : [
           "kms:Encrypt",
           "kms:GenerateDataKey*",
           "kms:Decrypt",
           "kms:DescribeKey"
         ],
-        Resource: "*"
+        Resource : "*"
       }
     ]
   })
