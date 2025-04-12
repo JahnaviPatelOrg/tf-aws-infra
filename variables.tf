@@ -119,6 +119,11 @@ variable "route53_zone_id" {
   type        = string
 }
 
+variable "account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
 # # min_size
 # variable "min_size" {
 #   description = "The minimum size of the Auto Scaling group."
@@ -201,3 +206,8 @@ variable "route53_zone_id" {
 #   default     = 3
 # }
 
+# certificate_arn
+variable "certificate_arn" {
+  description = "The ARN of the SSL certificate."
+  type        = string
+}
