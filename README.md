@@ -83,6 +83,15 @@ You may need to provide AWS credentials and other necessary variables to Terrafo
 If there are specific instructions or additional configuration needed, you may want to check other documentation or scripts within the repository.
 
 
+To import the certificate to ACM, you can use the AWS CLI command. Make sure to replace the file paths with the actual paths to your certificate files.
+```bash
+aws acm import-certificate \
+--profile Demo \
+--certificate fileb:///Users/jahnavipatel/Downloads/demo_glitchgetaway.me/demo_glitchgetaway_me.crt \
+--private-key fileb:///Users/jahnavipatel/Downloads/demo_glitchgetaway.me/private_key.txt \
+--certificate-chain fileb:///Users/jahnavipatel/Downloads/demo_glitchgetaway.me/demo_glitchgetaway_me.ca-bundle \
+--region us-east-1
+```
 
 
 
